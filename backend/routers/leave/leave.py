@@ -2,10 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import List
+import os
 
 from config import get_db
 from models import Leave, TeacherSubject, User, LeaveStatus
 from routers.leave.schemas import LeaveCreate, LeaveUpdate, LeaveOut
+
+from twilio.rest import Client
 
 leave_router = APIRouter()
 
@@ -29,6 +32,7 @@ async def apply_leave(
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
     
+    # Create the new leave
     new_leave = Leave(
         student_id=leave_data.student_id,
         teacher_subject_id=leave_data.teacher_subject_id,  # teacher_subject_id is the teacher's clerkId
@@ -40,6 +44,37 @@ async def apply_leave(
     db.add(new_leave)
     await db.commit()
     await db.refresh(new_leave)
+
+    teacher_query = await db.execute(
+        select(User).filter(User.clerkId == teacher_subject.teacher_id)
+    )
+    teacher = teacher_query.scalars().first()
+    if teacher and teacher.phone_number:
+ 
+        account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+        auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+        twilio_number = os.getenv("TWILIO_PHONE_NUMBER")
+
+        client = Client(account_sid, auth_token)
+
+        sms_body = (
+            f"Leave Request:\n"
+            f"Student: {student.first_name} {student.last_name}\n"
+            f"Reason: {new_leave.reason}\n"
+            f"Date: {new_leave.date}\n"
+            f"Half Day: {new_leave.half_day}\n"
+        )
+
+        try:
+            message = client.messages.create(
+                body=sms_body,
+                from_=twilio_number,     
+                to='+917009023965'   
+            )
+            print("SMS sent. SID:", message.sid)
+        except Exception as e:
+            print("Error sending SMS:", e)
+
     return new_leave
 
 @leave_router.get("/", response_model=List[LeaveOut])

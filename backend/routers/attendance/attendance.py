@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import List
-import datetime
+from datetime import datetime
 
 from config import get_db
 from models import Attendance, AttendanceStatus, User
@@ -29,7 +29,7 @@ async def create_attendance(
     # Create the attendance record, populating clerkId from the found User
     new_attendance = Attendance(
         user_id=attendance_data.user_id,
-        clerkId=user_obj.clerkId,  # Automatically set from the User record
+        clerkId=user_obj.clerkId,
         date=datetime.now().date(),
         status=attendance_data.status,
         subject=attendance_data.subject

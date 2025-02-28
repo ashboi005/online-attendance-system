@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from routers.auth.auth import auth_router
 from routers.attendance.attendance import attendance_router
 from routers.leave.leave import leave_router
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
@@ -14,3 +15,10 @@ def home():
     '''This is the first and default route for the Attendance System Backend'''
     return {"message": "Hello World!"}
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
