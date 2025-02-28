@@ -21,8 +21,8 @@ class User(Base):
     phone_number = Column(String, unique=True, nullable=False)
     role = Column(Enum(UserRole), default=UserRole.USER, nullable=False)
 
-    attendance_records = relationship("Attendance", back_populates="user", cascade="all, delete-orphan")
-    teacher_subjects = relationship("TeacherSubject", back_populates="teacher", cascade="all, delete-orphan")
+    attendance_records = relationship("Attendance", back_populates="user", cascade="all, delete-orphan",foreign_keys=lambda: [Attendance.clerkId])
+    teacher_subject = relationship("TeacherSubject", back_populates="teacher", uselist=False)
     leaves = relationship("Leave", back_populates="student", cascade="all, delete-orphan")
 
 class AttendanceStatus(enum.Enum):
@@ -33,22 +33,22 @@ class AttendanceStatus(enum.Enum):
 class Attendance(Base):
     __tablename__ = "attendance"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(String, ForeignKey("users.user_id"), nullable=False)
     clerkId = Column(String, ForeignKey("users.clerkId"), nullable=False)
     date = Column(Date, nullable=False)
     subject = Column(String, nullable=False)
     status = Column(Enum(AttendanceStatus), default=AttendanceStatus.PRESENT, nullable=False)
 
-    user = relationship("User", back_populates="attendance_records")
+    user = relationship("User", back_populates="attendance_records", foreign_keys=[clerkId])
 
 class TeacherSubject(Base):
     __tablename__ = "teacher_subjects"
-    id = Column(Integer, primary_key=True, index=True)
-    teacher_id = Column(String, ForeignKey("users.clerkId"), nullable=False)
+    teacher_id = Column(String, ForeignKey("users.clerkId"), primary_key=True, nullable=False)
     subject = Column(String, nullable=False)
 
-    teacher = relationship("User", back_populates="teacher_subjects")
+    teacher = relationship("User", back_populates="teacher_subject", uselist=False)
     leaves = relationship("Leave", back_populates="teacher_subject", cascade="all, delete-orphan")
+
 
 class LeaveStatus(enum.Enum):
     PENDING = "PENDING"
@@ -58,7 +58,8 @@ class LeaveStatus(enum.Enum):
 class Leave(Base):
     __tablename__ = "leaves"
     id = Column(Integer, primary_key=True, index=True)
-    student_id = Column(Integer, ForeignKey("users.clerkId"), nullable=False)
+
+    student_id = Column(String, ForeignKey("users.clerkId"), nullable=False)
     teacher_subject_id = Column(String, ForeignKey("teacher_subjects.teacher_id"), nullable=False)
     date = Column(Date, nullable=False)
     half_day = Column(Boolean, default=False)
@@ -67,3 +68,4 @@ class Leave(Base):
 
     student = relationship("User", back_populates="leaves")
     teacher_subject = relationship("TeacherSubject", back_populates="leaves")
+
