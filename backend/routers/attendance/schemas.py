@@ -10,7 +10,7 @@ class AttendanceStatus(str, Enum):
     LEAVE = "LEAVE"
 
 class AttendanceBase(BaseModel):
-    user_id: int
+    user_id: str
     date: date
     subject: str
     status: AttendanceStatus = AttendanceStatus.PRESENT
@@ -26,7 +26,7 @@ class AttendanceUpdate(BaseModel):
 class AttendanceOut(BaseModel):
     """Schema for returning attendance data to the client."""
     id: int
-    user_id: int
+    user_id: str
     date: date
     subject: str
     status: AttendanceStatus
